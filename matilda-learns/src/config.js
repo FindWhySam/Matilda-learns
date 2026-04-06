@@ -69,7 +69,12 @@ export const weakestSubject = (termLevels, currentPath) => {
 export const callClaude = async (prompt) => {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
-    headers:{ "Content-Type":"application/json" },
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
     body:JSON.stringify({
       model:"claude-sonnet-4-20250514", max_tokens:1400,
       system:"You are an expert Australian primary school teacher. Return only a valid JSON array — no markdown, no preamble, raw JSON only.",
@@ -79,7 +84,6 @@ export const callClaude = async (prompt) => {
   const data = await res.json();
   return JSON.parse(data.content[0].text.replace(/```json\n?|```/g,"").trim());
 };
-
 export const S = {
   page:     {fontFamily:"'Segoe UI',system-ui,sans-serif",maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"#F9FAFB"},
   center:   {fontFamily:"'Segoe UI',system-ui,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:16,background:"#F9FAFB"},
