@@ -116,3 +116,4 @@ export const CSS = `
   @keyframes star   { 0%,100% { transform:scale(1) } 50% { transform:scale(1.2) } }
   @keyframes pulse  { 0%,100% { box-shadow:0 0 0 0 rgba(59,130,246,0.4) } 70% { box-shadow:0 0 0 8px rgba(59,130,246,0) } }
 `;
+
