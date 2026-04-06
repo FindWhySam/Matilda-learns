@@ -76,7 +76,7 @@ export const callClaude = async (prompt) => {
       "anthropic-dangerous-direct-browser-access": "true",
     },
     body:JSON.stringify({
-      model:"claude-sonnet-4-20250514", max_tokens:1400,
+      model:"claude-sonnet-4-20250514", max_tokens:4000,
       system:"You are an expert Australian primary school teacher. Return only a valid JSON array — no markdown, no preamble, raw JSON only.",
       messages:[{ role:"user", content:prompt }],
     }),
