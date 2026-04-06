@@ -5,7 +5,7 @@ import {
   topicItems, checkPromotion, termProgressCount, nextTopicFor, weakestSubject,
   callClaude, S, CSS,
 } from "../config";
-import { persist, hydrate, clearAll } from "../storage";
+import { persist, hydrate, clearAll, getQuestionHistory, saveQuestions } from "../storage";
 
 export default function MatildaPage() {
   const [screen, setScreen]           = useState("loading");
@@ -65,6 +65,12 @@ export default function MatildaPage() {
   const startDiag = async () => {
     setLoading(true); setLoadingMsg("Setting up your quiz, Matilda... ✏️");
     diagRef.current = [];
+
+    const allHistory = (await Promise.all(Object.keys(SUBJECTS).map(s => getQuestionHistory(s)))).flat().slice(-40);
+    const avoidBlock = allHistory.length
+      ? `\nAvoid repeating these previously asked questions:\n${allHistory.map(q => `- ${q}`).join("\n")}\n`
+      : "";
+
     try {
       const qs = await callClaude(`Generate exactly 12 adaptive diagnostic questions for Matilda, a bright Year 3 Australian student aged 7-8 who just finished Term 1.
 
@@ -75,7 +81,7 @@ MATHS: T1Y3=3-digit numbers +/-to1000 ×2×5×10 halves/quarters telling time | 
 ENGLISH: T1Y3=nouns/verbs/adjectives conjunctions basic punctuation Year3 spelling | T2Y3=adverbs/pronouns compound sentences apostrophes speech marks | T3Y3=complex sentences similes/metaphors narrative writing synonyms/antonyms
 SCIENCE: T1Y3=living/non-living habitats weather | T2Y3=forces materials/change light/shadows | T3Y3=life cycles ecosystems sound/energy
 GK: T1Y3=Australian states/territories animals symbols | T2Y3=world countries continents landmarks | T3Y3=Australian history world history famous scientists
-
+${avoidBlock}
 Rules:
 - Include "term_level" field: "T1Y3" "T2Y3" or "T3Y3"
 - maths: typed for arithmetic (answer is a number), multiple_choice for concepts
@@ -87,6 +93,11 @@ Rules:
 
 Return ONLY this JSON:
 [{"subject":"maths","difficulty":"easy","term_level":"T1Y3","question":"What is 45 + 37?","type":"typed","answer":"82","explanation":"To add these numbers, first add the tens (40+30=70) then the ones (5+7=12), giving 70+12=82."}]`);
+
+      await Promise.all(Object.keys(SUBJECTS).map(s => {
+        const subQs = qs.filter(q => q.subject === s);
+        return subQs.length ? saveQuestions(s, subQs) : Promise.resolve();
+      }));
 
       setDiagQs(qs); setDiagIdx(0); resetQ(); setScreen("diagnostic");
     } catch(e) { console.error(e); alert("Couldn't load quiz — try again!"); }
@@ -137,19 +148,24 @@ Return ONLY this JSON:
         || { subject:sub, topic:TERM_TOPICS[useTL[sub]]?.[sub]?.[0], termLevel:useTL[sub] };
     });
     try {
+      const histories = await Promise.all(Object.keys(SUBJECTS).map(s => getQuestionHistory(s)));
+      const histMap   = Object.fromEntries(Object.keys(SUBJECTS).map((s,i) => [s, histories[i]]));
+
       const subBlocks = topicPicks.map(item => {
         const content  = TERM_CONTENT[item.termLevel]?.[item.subject] || "";
         const typeRule =
           item.subject==="maths"   ? "typed for arithmetic (answer is a number), multiple_choice for concepts" :
           item.subject==="english" ? "typed for single-word spelling ONLY, multiple_choice for everything else" :
                                      "all multiple_choice";
-        return `SUBJECT:${item.subject} TOPIC:"${item.topic}" LEVEL:${TERM_LABEL[item.termLevel]} CONTENT:${content} TYPES:${typeRule}`;
+        const history  = (histMap[item.subject] || []).slice(-20);
+        const avoidStr = history.length ? ` AVOID:${history.join("|")}` : "";
+        return `SUBJECT:${item.subject} TOPIC:"${item.topic}" LEVEL:${TERM_LABEL[item.termLevel]} CONTENT:${content} TYPES:${typeRule}${avoidStr}`;
       }).join("\n");
 
-      const qs = await callClaude(`Generate exactly 8 quiz questions for Matilda, Year 3 Australian student aged 7-8. She is bright with ADHD so questions must be engaging.
+      const qs = await callClaude(`Generate exactly 8 quiz questions for Matilda, Year 3 Australian student aged 7-8. Bright with ADHD — engaging, VARIED, never repeat facts or examples she has seen before.
 
 Generate EXACTLY 2 questions per subject in this order: maths, english, science, gk.
-Include "subject" field in every question. First question per subject: easy/confidence-building. Second: medium/harder.
+Include "subject" field in every question. First question per subject: easy. Second: medium/harder.
 
 ${subBlocks}
 
@@ -159,9 +175,15 @@ Rules:
 - typed: exact correct value
 - Include "difficulty" field: "easy" or "medium"
 - explanations: clear and conceptual, explain the idea not just the answer, 1-2 sentences
+- Use completely fresh examples — never reuse landmarks, animals, people or numbers from AVOID lists
 
 Return ONLY this JSON:
 [{"subject":"maths","question":"...","type":"typed","answer":"30","difficulty":"easy","explanation":"..."}]`);
+
+      await Promise.all(Object.keys(SUBJECTS).map(s => {
+        const subQs = qs.filter(q => q.subject === s);
+        return subQs.length ? saveQuestions(s, subQs) : Promise.resolve();
+      }));
 
       setActiveQs(qs); setActiveIdx(0);
       setIsMixMode(true); setStreak(0); resetQ();
@@ -183,12 +205,16 @@ Return ONLY this JSON:
       item.subject==="maths"   ? "typed for arithmetic (answer is a number), multiple_choice for word problems and concepts" :
       item.subject==="english" ? "typed for single-word spelling ONLY, multiple_choice for everything else" :
                                  "all multiple_choice";
+    const history    = await getQuestionHistory(item.subject);
+    const avoidBlock = history.length
+      ? `\nAvoid repeating these previously asked questions (use completely different examples, numbers, animals, people or facts):\n${history.slice(-30).map(q => `- ${q}`).join("\n")}\n`
+      : "";
     try {
-      const qs = await callClaude(`Generate exactly ${count} questions about "${item.topic}" in ${subLabel} for Matilda, Year 3 Australian student aged 7-8. Bright with ADHD — engaging and varied.
+      const qs = await callClaude(`Generate exactly ${count} questions about "${item.topic}" in ${subLabel} for Matilda, Year 3 Australian student aged 7-8. Bright with ADHD — engaging, varied, never repetitive.
 
 Level: ${TERM_LABEL[item.termLevel]}
 Content: ${content}
-
+${avoidBlock}
 Start with 1 confidence-building question then push progressively harder. Include "difficulty": "easy" "medium" or "hard".
 ${typeRule}
 - multiple_choice: exactly 4 options, answer matches one option exactly
@@ -198,6 +224,7 @@ ${typeRule}
 Return ONLY this JSON:
 [{"question":"...","type":"multiple_choice","options":["A","B","C","D"],"answer":"B","difficulty":"easy","explanation":"..."}]`);
 
+      await saveQuestions(item.subject, qs);
       setActiveQs(qs); setActiveIdx(0); setStreak(0); resetQ(); setScreen("lesson");
     } catch(e) { console.error(e); alert("Couldn't load lesson — try again!"); }
     setLoading(false);
