@@ -1,18 +1,33 @@
+import { useState, useEffect } from "react";
 import { SUBJECTS, TERM_LABEL, TERM_NEXT, termProgressCount, S, CSS } from "../config";
 import { hydrate } from "../storage";
 
 export default function MumPage() {
-  const saved = hydrate();
-  const termLevels = saved?.termLevels || {};
-  const path       = saved?.path       || [];
+  const [saved, setSaved] = useState(undefined); // undefined = loading, null = no data
+
+  useEffect(() => {
+    hydrate().then(data => setSaved(data ?? null));
+  }, []);
+
+  const termLevels  = saved?.termLevels  || {};
+  const path        = saved?.path        || [];
   const diagResults = saved?.diagResults || null;
-  const completed  = path.filter(x => x.completed);
+  const completed   = path.filter(x => x.completed);
 
   const pageStyle = {
     fontFamily:"'Segoe UI',system-ui,sans-serif",
     maxWidth:600, margin:"0 auto", minHeight:"100vh",
     background:"#F9FAFB", padding:"0 0 48px",
   };
+
+  if (saved === undefined) return (
+    <div style={{ ...pageStyle, display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ textAlign:"center" }}>
+        <div style={{ width:32, height:32, border:"3px solid #E5E7EB", borderTop:"3px solid #3B82F6", borderRadius:"50%", animation:"spin 0.7s linear infinite", margin:"0 auto 12px" }} />
+        <p style={{ fontSize:13, color:"#9CA3AF", margin:0 }}>Loading Matilda's data…</p>
+      </div>
+    </div>
+  );
 
   return (
     <div style={pageStyle}>
