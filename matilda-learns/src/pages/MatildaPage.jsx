@@ -42,13 +42,14 @@ export default function MatildaPage() {
   const advTimer                      = useRef(null);
 
   useEffect(() => {
-    const saved = hydrate();
-    if (saved?.termLevels && saved?.path) {
-      setTermLevels(saved.termLevels); setPath(saved.path);
-      if (saved.diagResults)  setDiagResults(saved.diagResults);
-      if (saved.lastMixDate)  setLastMixDate(saved.lastMixDate);
-      setScreen("path");
-    } else setScreen("welcome");
+    hydrate().then((saved) => {
+      if (saved?.termLevels && saved?.path) {
+        setTermLevels(saved.termLevels); setPath(saved.path);
+        if (saved.diagResults)  setDiagResults(saved.diagResults);
+        if (saved.lastMixDate)  setLastMixDate(saved.lastMixDate);
+        setScreen("path");
+      } else setScreen("welcome");
+    });
     return () => clearTimeout(advTimer.current);
   }, []);
 
