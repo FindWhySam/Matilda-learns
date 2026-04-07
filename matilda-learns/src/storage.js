@@ -2,7 +2,7 @@ const USER_ID = "matilda-primary";
 const KEY     = "matilda-v5"; // localStorage fallback key
 
 const url = () => "https://oektwjbobociaaxpmnez.supabase.co";
-const key = () => "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9la3R3amJvYm9jaWFheHBtbmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTM0MjAsImV4cCI6MjA1OTU2OTQyMH0.";
+const key = () => "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9la3R3amJvYm9jaWFheHBtbmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc4MzAsImV4cCI6MjA5MTA3MzgzMH0.b3npMWIv_-2I2ognDbLxCZ-YEcc7qusnG28nYibiqxs";
 
 const headers = () => ({
   "Content-Type": "application/json",
