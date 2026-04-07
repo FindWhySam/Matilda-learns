@@ -1,8 +1,8 @@
 const USER_ID = "matilda-primary";
 const KEY     = "matilda-v5"; // localStorage fallback key
 
-const url = () => import.meta.env.VITE_SUPABASE_URL;
-const key = () => import.meta.env.VITE_SUPABASE_KEY;
+const url = () => "https://oektwjbobociaaxpmnez.supabase.co";
+const key = () => "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9la3R3amJvYm9jaWFheHBtbmV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTM0MjAsImV4cCI6MjA1OTU2OTQyMH0.";
 
 const headers = () => ({
   "Content-Type": "application/json",
